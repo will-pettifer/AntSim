@@ -5,6 +5,7 @@
 
 #include "Ant.h"
 #include <vector>
+#include <list>
 #include <memory>
 
 #include "Marker.h"
@@ -46,7 +47,9 @@ public:
     void loadObstacle(sf::Vector2f pos);
     void unloadObstacles();
 
+    vector<shared_ptr<Marker>> foodMarkers;
     vector<shared_ptr<Marker>> foodMarkerGrid[128][72];
+    vector<shared_ptr<Marker>> homeMarkers;
     vector<shared_ptr<Marker>> homeMarkerGrid[128][72];
     vector<shared_ptr<Marker>> markersToRemove;
     void loadFoodMarker(sf::Vector2f pos);

@@ -3,8 +3,9 @@
 //
 
 #include "Scene.h"
+#include "Helpers.h"
+#include "Timer.h"
 
-#include <iostream>
 #include <vector>
 #include <memory>
 
@@ -24,23 +25,28 @@ Scene* Scene::getInstance() {
 }
 
 void Scene::update(const float delta) {
-    for (const auto& ptr : ants) {
-        ptr->update(delta);
-    }
-    for (int i = 0; i < 128; i++) {
-        for (int j = 0; j < 72; j++) {
-            for (const auto& ptr : foodGrid[i][j]) {
-                ptr->update(delta);
-            }
-            for (const auto& ptr : homeMarkerGrid[i][j]) {
-                ptr->update(delta);
-            }
-            for (const auto& ptr : foodMarkerGrid[i][j]) {
-                ptr->update(delta);
-            }
+
+
+    {
+        //Timer timer;
+//#pragma omp parallel for num_threads(6)
+        for (const auto& ptr : ants) {
+            ptr->update(delta);
         }
     }
 
+
+    {
+        //Timer timer;
+#pragma omp parallel for num_threads(6)
+        for (const auto& ptr : foodMarkers) {
+            ptr->update(delta);
+        }
+#pragma omp parallel for num_threads(6)
+        for (const auto& ptr : homeMarkers) {
+            ptr->update(delta);
+        }
+    }
 
     unloadMarkers();
     unloadFoods();
@@ -49,7 +55,6 @@ void Scene::update(const float delta) {
 
 void Scene::loadAnt(sf::Vector2f position) {
     ants.push_back(make_shared<Ant>(position));
-    vertexCount++;
 }
 void Scene::unloadAnts() {
     antsToRemove.clear();
@@ -77,7 +82,7 @@ void Scene::unloadFoods() {
 void Scene::loadObstacle(sf::Vector2f pos) {
     if (pos.x < 0 || pos.x > 1280 || pos.y < 0 || pos.y > 720) return;
     const auto posi = static_cast<sf::Vector2u>(pos / 10.f);
-    obstacleGrid[posi.x][posi.y].push_back(make_shared<Marker>(pos));
+    obstacleGrid[posi.x][posi.y].push_back(make_shared<Marker>(pos, Marker::Home));
     vertexCount++;
 }
 
@@ -101,37 +106,58 @@ void Scene::unloadObstacles() {
 void Scene::loadFoodMarker(sf::Vector2f pos) {
     if (pos.x < 0 || pos.x > 1280 || pos.y < 0 || pos.y > 720) return;
     const auto posi = static_cast<sf::Vector2u>(pos / 10.f);
-    foodMarkerGrid[posi.x][posi.y].push_back(make_shared<Marker>(pos));
-    vertexCount++;
+
+    #pragma omp critical
+    {
+        int gridId = foodMarkerGrid[posi.x][posi.y].size();
+        int id = foodMarkers.size();
+
+        const auto ptr = make_shared<Marker>(pos, Marker::Food, id, gridId);
+        foodMarkerGrid[posi.x][posi.y].push_back(ptr);
+        foodMarkers.push_back(ptr);
+    }
 }
 void Scene::loadHomeMarker(sf::Vector2f pos) {
     if (pos.x < 0 || pos.x > 1280 || pos.y < 0 || pos.y > 720) return;
     const auto posi = static_cast<sf::Vector2u>(pos / 10.f);
-    homeMarkerGrid[posi.x][posi.y].push_back(make_shared<Marker>(pos));
-    vertexCount++;
+
+    #pragma omp critical
+    {
+        int gridId = homeMarkerGrid[posi.x][posi.y].size();
+        int id = homeMarkers.size();
+
+        const auto ptr = make_shared<Marker>(pos, Marker::Home, id, gridId);
+        homeMarkerGrid[posi.x][posi.y].push_back(ptr);
+        homeMarkers.push_back(ptr);
+    }
 }
 void Scene::unloadMarkers() {
     for (const auto& marker : markersToRemove) {
         const auto pos = static_cast<sf::Vector2u>(marker->position / 10.f);
-        auto& cellf = foodMarkerGrid[pos.x][pos.y];
+        const auto id = marker->id;
+        const auto gridId = marker->gridId;
 
-        for (auto it = cellf.begin(); it != cellf.end(); ++it) {
-            if (*it == marker) {
-                cellf.erase(it);
-                vertexCount--;
-                break;
-            }
-        }
+        if (marker->type == Marker::Food) {
+            foodMarkers[id].swap(foodMarkers.back());
+            foodMarkers[id]->id = id;
+            foodMarkers.pop_back();
 
-        auto& cellh = homeMarkerGrid[pos.x][pos.y];
-        for (auto it = cellh.begin(); it != cellh.end(); ++it) {
-            if (*it == marker) {
-                cellh.erase(it);
-                vertexCount--;
-                break;
-            }
+            auto& cell = foodMarkerGrid[pos.x][pos.y];
+            cell[gridId].swap(cell.back());
+            cell[gridId]->gridId = gridId;
+            cell.pop_back();
+        } else if (marker->type == Marker::Home) {
+            homeMarkers[id].swap(homeMarkers.back());
+            homeMarkers[id]->id = id;
+            homeMarkers.pop_back();
+
+            auto& cell = homeMarkerGrid[pos.x][pos.y];
+            cell[gridId].swap(cell.back());
+            cell[gridId]->gridId = gridId;
+            cell.pop_back();
         }
     }
+
     markersToRemove.clear();
 }
 
@@ -139,6 +165,6 @@ void Scene::addCell(const sf::Vector2u cell) {
     cellsToDisplay.push_back(cell);
 }
 
-void Scene::addCircle(sf::Vector2f pos) {
+void Scene::addCircle(const sf::Vector2f pos) {
     circlesToDisplay.push_back(pos);
 }

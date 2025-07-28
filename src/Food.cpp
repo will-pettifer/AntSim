@@ -15,17 +15,17 @@ Food::Food(const sf::Vector2f position) {
     isHeld = false;
 }
 
-void Food::update(float delta) {
-    if (isHeld) {
-        if (const auto antPtr = ant.lock()) {
-            position = antPtr->position;
-            cout << "working" << endl;
-        } else {
-            isHeld = false;
-            unload();
-        }
-    }
-}
+// void Food::update(float delta) {
+//     if (isHeld) {
+//         if (const auto antPtr = ant.lock()) {
+//             position = antPtr->position;
+//             cout << "working" << endl;
+//         } else {
+//             isHeld = false;
+//             unload();
+//         }
+//     }
+// }
 
 void Food::grab(const std::shared_ptr<Ant>& ant) {
     isHeld = true;

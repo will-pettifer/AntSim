@@ -5,6 +5,7 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 #include <vector>
+#include <list>
 #include <memory>
 
 #include "Food.h"

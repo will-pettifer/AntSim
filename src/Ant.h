@@ -14,15 +14,15 @@ private:
 
     static constexpr float SPEED = 25.f;
     static constexpr float STEER_STRENGTH = 50.f;
-    static constexpr float WANDER_STRENGTH = 0.2f;
+    static constexpr float WANDER_STRENGTH = 0.1f;
 
-    static constexpr float UPDATE_INTERVAL = 0.05f;
-    static constexpr float MARKER_INTERVAL = 0.2f;
+    static constexpr float UPDATE_INTERVAL = 0.1f;
+    static constexpr float MARKER_INTERVAL = 0.1f;
 
-    static constexpr uint8_t BOMB_COUNT = 20;
+    static constexpr uint8_t BOMB_COUNT = 60;
     static constexpr float BOMB_RANGE_MIN = 0.f;
-    static constexpr float BOMB_RANGE_MAX = 7.f;
-    static constexpr float BOMB_RANGE_OUTER = 15.f;
+    static constexpr float BOMB_RANGE_MAX = 15.f;
+    static constexpr float BOMB_RANGE_OUTER = 25.f;
 
 
 

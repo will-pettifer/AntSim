@@ -11,12 +11,18 @@
 
 class Marker : public std::enable_shared_from_this<Marker> {
 public:
-    explicit Marker(sf::Vector2f position, float lifetime = LIFETIME);
+    enum Type{Home, Food};
 
-    static constexpr float LIFETIME = 60.0f;
+    static constexpr float LIFETIME = 40.0f;
+
+    explicit Marker(sf::Vector2f position, Type type, int id = 0, int gridId = 0, float lifetime = LIFETIME);
+
+    Type type;
 
     sf::Vector2f position;
     float lifetime;
+    int id;
+    int gridId;
 
     void update(float delta);
     void unload();

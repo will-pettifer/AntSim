@@ -15,12 +15,11 @@
 
 Ant::Ant(const sf::Vector2f position) {
     this->position = position;
-    direction = {Random::Float(-1, 1), Random::Float(-1, 1)};
-    direction = direction.normalized();
-    velocity = {Random::Float(-1, 1), Random::Float(-1, 1)};
-    velocity = velocity.normalized();
+    direction = Random::OnUnitCircle();
+    velocity = Random::OnUnitCircle();
     state = FOOD;
-    timer = Random::Float(0, 0.5f);
+    timer = Random::Float(0, MARKER_INTERVAL);
+    frameTimer = Random::Float(0, UPDATE_INTERVAL);
 }
 
 
@@ -33,12 +32,11 @@ void Ant::update(const float delta) {
             Random::OnUnitCircle() *
             WANDER_STRENGTH
             ).normalized();
-        //direction = Helpers::RotateVector(direction, Random::Float(-sf::priv::pi / 10, sf::priv::pi / 10));
-        //direction = Scene::getInstance()->mousePosition - position;
     }
     timer += delta;
     if (timer > MARKER_INTERVAL) {
         timer -= MARKER_INTERVAL;
+
         if (state == HOME) Scene::getInstance()->loadFoodMarker(position);
         else if (state == FOOD) Scene::getInstance()->loadHomeMarker(position);
     }
@@ -68,10 +66,17 @@ sf::Vector2f Ant::Navigate() {
         return direction;
     }
     if (state == FOOD) {
-        if (const shared_ptr<Food> food = sensor.SenseFood(senseArea); food != nullptr) {
-            state = HOME;
-            heldFood = food;
-            food->grab(shared_from_this());
+
+        #pragma omp critical
+        {
+            if (const shared_ptr<Food> food = sensor.SenseFood(senseArea); food != nullptr) {
+                state = HOME;
+                heldFood = food;
+                food->grab(shared_from_this());
+            }
+        }
+
+        if (heldFood != nullptr) {
             FoodBomb();
             direction = Helpers::RotateVector(direction, sf::priv::pi);
             velocity = {0, 0};
@@ -80,10 +85,16 @@ sf::Vector2f Ant::Navigate() {
         return sensor.MultiSense(Scene::getInstance()->foodMarkerGrid, senseArea, direction);
     }
     if (state == HOME) {
+
         if ((sf::Vector2f(1280.f / 2, 720.f / 2) - position).lengthSquared() < 1000.f) {
             state = FOOD;
             heldFood->unload();
-            Scene::getInstance()->score++;
+
+            #pragma omp critical
+            {
+                Scene::getInstance()->score++;
+            }
+
             HomeBomb();
             direction = Helpers::RotateVector(direction, sf::priv::pi);
             return direction;

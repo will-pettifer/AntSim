@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <omp.h>
 
 #include "Helpers.h"
 #include "Random.h"
@@ -9,13 +10,15 @@
 
 int main()
 {
+    sf::ContextSettings settings;
+    settings.majorVersion = 4;
+    settings.minorVersion = 2;
+
     constexpr sf::Vector2u windowSize = {1280u, 720u};
     constexpr sf::Vector2f windowCentre = {windowSize.x / 2.f, windowSize.y / 2.f};
-    auto window = sf::RenderWindow(sf::VideoMode(windowSize), "CMake SFML Project");
+    auto window = sf::RenderWindow(sf::VideoMode(windowSize), "AntSim", sf::State::Windowed, settings);
     window.setFramerateLimit(144);
-    window.setPosition({200, 100});
-
-
+    window.setPosition({0, 0});
 
     // --- Pre Loop ---
 
@@ -28,20 +31,21 @@ int main()
     vector<int> fps;
     float fpsAverage = 0;
 
+    bool antsSpawned = false;
+
     constexpr float LIFETIME = Marker::LIFETIME;
-    constexpr float TRANSLUCENCY = 90.f;
+    constexpr float TRANSLUCENCY = 70.f;
 
     auto vertices = sf::VertexArray(sf::PrimitiveType::Points, 5000);
 
+    // for (int i = 0; i < 400; ++i) {
+    //     scene->loadAnt(windowCentre);
+    // }
 
-    for (int i = 0; i < 400; ++i) {
-        scene->loadAnt(windowCentre);
-    }
-
-    for (int i = 0; i < 3; ++i) {
-        sf::Vector2f position = Random::OnUnitCircle() * Random::Float(150.f, 300.f);
+    for (int i = 0; i < 5; ++i) {
+        sf::Vector2f position = Random::OnUnitCircle() * Random::Float(200.f, 300.f);
         position += windowCentre;
-        for (int j = 0; j < 150; ++j) {
+        for (int j = 0; j < 300; ++j) {
             scene->loadFood(position + Random::OnUnitCircle() * Random::Float(0.f, 20.f));
         }
     }
@@ -73,48 +77,62 @@ int main()
             fpsCounter = 0;
             cout << "score: " << scene->score << endl;
         }
-        if (fps.size() == 180) {
+        if (fps.size() == 90) {
             for (const int & fp : fps) {
                 fpsAverage += fp;
             }
             fpsAverage /= fps.size();
-            cout << "fps average: " << fpsAverage << endl;
+            //cout << "fps average: " << fpsAverage << endl;
+            //window.close();
             fps.clear();
         }
 
 
         scene->update(delta);
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) && !antsSpawned) {
+            antsSpawned = true;
+            for (int i = 0; i < 800; ++i) {
+                scene->loadAnt(windowCentre);
+            }
+        }
 
         scene->mousePosition = sf::Vector2f(sf::Mouse::getPosition(window));
         if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
             scene->loadObstacle(scene->mousePosition);
         }
 
+        // int gridCounter = 0;
+        // for (auto & i : scene->foodGrid) {
+        //     for (auto & j : i) {
+        //         for (const auto& ptr : j) {
+        //             gridCounter++;
+        //         }
+        //     }
+        // }
+        // cout << "grid: " << gridCounter << endl;
+        // //cout << "raw: " << scene->f.size() << endl;
+        // cout << "toRemove: " << scene->foodsToRemove.size() << endl;
+
+
+
 
         // --- Draw Loop ---
 
         window.clear();
 
-        vertices.resize(scene->vertexCount);
+        vertices.resize(scene->vertexCount + scene->homeMarkers.size() + scene->foodMarkers.size()
+            + scene->ants.size());
 
         int index = 0;
-        for (auto & i : scene->homeMarkerGrid) {
-            for (auto & j : i) {
-                for (const auto& ptr : j) {
-                    vertices[index].position = ptr->position;
-                    vertices[index].color = sf::Color(50, 100, 255, TRANSLUCENCY * (ptr->lifetime / LIFETIME));
-                    index++;
-                }
-            }
+        for (const auto & ptr : scene->homeMarkers) {
+            vertices[index].position = ptr->position;
+            vertices[index].color = sf::Color(50, 100, 255, TRANSLUCENCY * (ptr->lifetime / LIFETIME));
+            index++;
         }
-        for (auto & i : scene->foodMarkerGrid) {
-            for (auto & j : i) {
-                for (const auto& ptr : j) {
-                    vertices[index].position = ptr->position;
-                    vertices[index].color = sf::Color(20, 255, 20, TRANSLUCENCY * (ptr->lifetime / LIFETIME));
-                    index++;
-                }
-            }
+        for (const auto & ptr : scene->foodMarkers) {
+            vertices[index].position = ptr->position;
+            vertices[index].color = sf::Color(20, 255, 20, TRANSLUCENCY * (ptr->lifetime / LIFETIME));
+            index++;
         }
         for (const auto& ptr : scene->ants) {
             vertices[index].position = ptr->position;

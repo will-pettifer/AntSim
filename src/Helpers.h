@@ -4,6 +4,8 @@
 
 #ifndef HELPERS_H
 #define HELPERS_H
+#include <chrono>
+
 #include "SFML/System/Vector2.hpp"
 #include <ostream>
 
@@ -18,6 +20,7 @@ public:
     static sf::Vector2f ClampVector(sf::Vector2f vector, float limit);
     static sf::Vector2f Normalize(sf::Vector2f vector);
 };
+
 
 
 
