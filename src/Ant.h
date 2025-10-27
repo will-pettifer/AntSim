@@ -4,6 +4,7 @@
 
 #ifndef ANT_H
 #define ANT_H
+#include <cstdint>
 #include <memory>
 
 #include "Food.h"

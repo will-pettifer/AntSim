@@ -12,27 +12,21 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(main src/main.cpp
-        src/Scene.cpp
+add_executable(ant-sim src/main.cpp src/
         src/Ant.cpp
-        src/Ant.h
-        src/Scene.h
         src/Food.cpp
-        src/Food.h
-        src/Marker.cpp
-        src/Marker.h
-        src/Random.cpp
-        src/Random.h
         src/Helpers.cpp
-        src/Helpers.h
+        src/Marker.cpp
+        src/Random.cpp
+        src/Scene.cpp
         src/Sensor.cpp
-        src/Sensor.h
         src/Timer.cpp
         src/Timer.h)
-target_compile_features(main PRIVATE cxx_std_17)
-target_link_libraries(main PRIVATE SFML::Graphics)
+
+target_compile_features(ant-sim PRIVATE cxx_std_17)
+target_link_libraries(ant-sim PRIVATE SFML::Graphics)
 if(MINGW)
-    target_link_options(main PRIVATE -static)
+    target_link_options(ant-sim PRIVATE -static)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
