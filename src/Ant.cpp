@@ -59,7 +59,6 @@ sf::Vector2f Ant::Navigate() {
     Sensor sensor(position, direction);
     const auto senseArea = sensor.GetSenseArea();
 
-
     if (sensor.ObstacleSense(senseArea)) {
         direction = Helpers::RotateVector(direction, sf::priv::pi);
         velocity = {0, 0};
